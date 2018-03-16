@@ -11,10 +11,11 @@
 
 namespace Symfony\Bundle\AsseticBundle\DependencyInjection;
 
+use Assetic\Factory\Worker\EnsureFilterWorker;
+use Assetic\Factory\Worker\WorkerInterface;
 use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\DefinitionDecorator;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
@@ -100,12 +101,11 @@ class AsseticExtension extends Extension
                 }
 
                 foreach ($filter['apply_to'] as $i => $pattern) {
-                    $worker = new DefinitionDecorator('assetic.worker.ensure_filter');
-                    $worker->replaceArgument(0, '/'.$pattern.'/');
-                    $worker->replaceArgument(1, new Reference('assetic.filter.'.$name));
-                    $worker->addTag('assetic.factory_worker');
-
-                    $container->setDefinition('assetic.filter.'.$name.'.worker'.$i, $worker);
+                    $container->register('assetic.filter.'.$name.'.worker'.$i, EnsureFilterWorker::class)
+                        ->setDecoratedService('assetic.worker.ensure_filter')
+                        ->addArgument('/'.$pattern.'/')
+                        ->addArgument(new Reference('assetic.filter.'.$name))
+                        ->addTag('assetic.factory_worker');
                 }
 
                 unset($filter['apply_to']);
